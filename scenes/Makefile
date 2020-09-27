@@ -15,13 +15,15 @@ EXPORT_SCENE=export-scene.py
 
 DIST=../dist
 
+FILE_NAME=maze
+
 all : \
-	$(DIST)/hexapod.pnct \
-	$(DIST)/hexapod.scene \
+	$(DIST)/$(FILE_NAME).pnct \
+	$(DIST)/$(FILE_NAME).scene \
 
 
-$(DIST)/hexapod.scene : hexapod.blend $(EXPORT_SCENE)
+$(DIST)/$(FILE_NAME).scene : $(FILE_NAME).blend $(EXPORT_SCENE)
 	$(BLENDER) --background --python $(EXPORT_SCENE) -- '$<':Main '$@'
 
-$(DIST)/hexapod.pnct : hexapod.blend $(EXPORT_MESHES)
+$(DIST)/$(FILE_NAME).pnct : $(FILE_NAME).blend $(EXPORT_MESHES)
 	$(BLENDER) --background --python $(EXPORT_MESHES) -- '$<':Main '$@'
