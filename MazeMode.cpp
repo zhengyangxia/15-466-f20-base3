@@ -7,6 +7,7 @@
 #include "Load.hpp"
 #include "gl_errors.hpp"
 #include "data_path.hpp"
+#include "load_save_png.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
 
@@ -14,14 +15,15 @@
 
 GLuint maze_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > maze_meshes(LoadTagDefault, []() -> MeshBuffer const * {
-	MeshBuffer const *ret = new MeshBuffer(data_path("hexapod.pnct"));
+	MeshBuffer const *ret = new MeshBuffer(data_path("maze.pnct"));
 	maze_meshes_for_lit_color_texture_program = ret->make_vao_for_program(lit_color_texture_program->program);
 	return ret;
 });
 
 Load< Scene > maze_scene(LoadTagDefault, []() -> Scene const * {
-	return new Scene(data_path("hexapod.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
+	return new Scene(data_path("maze.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
 		Mesh const &mesh = maze_meshes->lookup(mesh_name);
+		std::cout << mesh_name << std::endl;
 
 		scene.drawables.emplace_back(transform);
 		Scene::Drawable &drawable = scene.drawables.back();
@@ -40,28 +42,74 @@ Load< Sound::Sample > maze_sample(LoadTagDefault, []() -> Sound::Sample const * 
 	return new Sound::Sample(data_path("dusty-floor.opus"));
 });
 
+
+Scene::Transform* MazeMode::add_mesh_to_drawable(std::string mesh_name, glm::vec3 position) {
+	Mesh const& mesh = maze_meshes->lookup(mesh_name);
+	// create new transform
+	scene.transforms.emplace_back();
+	Scene::Transform* t = &scene.transforms.back();
+	t->position = position;
+	t->name = mesh_name;
+	t->parent = nullptr;
+
+	// create new drawable
+	Scene::Drawable drawable(t);
+	drawable.pipeline = lit_color_texture_program_pipeline;
+	drawable.pipeline.vao = maze_meshes_for_lit_color_texture_program;
+	drawable.pipeline.type = mesh.type;
+	drawable.pipeline.start = mesh.start;
+	drawable.pipeline.count = mesh.count;
+	scene.drawables.emplace_back(drawable);
+
+	// return the transform
+	return t;
+}
+
+
 MazeMode::MazeMode() : scene(*maze_scene) {
-	//get pointers to leg for convenience:
-	for (auto &transform : scene.transforms) {
-		if (transform.name == "Hip.FL") hip = &transform;
-		else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
-		else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
-	}
-	if (hip == nullptr) throw std::runtime_error("Hip not found.");
-	if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
-	if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
-
-	hip_base_rotation = hip->rotation;
-	upper_leg_base_rotation = upper_leg->rotation;
-	lower_leg_base_rotation = lower_leg->rotation;
-
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
 
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
-	leg_tip_loop = Sound::loop_3D(*maze_sample, 1.0f, get_leg_tip_position(), 10.0f);
+	leg_tip_loop = Sound::loop_3D(*maze_sample, 1.0f, camera->transform->position, 10.0f);
+
+	while (scene.drawables.size() > 0) {
+		scene.drawables.pop_back();
+	}
+
+	glm::uvec2 size(16, 16);
+	std::vector< glm::u8vec4 > data;
+	load_png(data_path("../maze/0.png"), &size, &data, UpperLeftOrigin);
+	for (size_t i = 0; i < size.y; ++i) {
+		for (size_t j = 0; j < size.x; ++j) {
+			size_t x = 2*j;
+			size_t y = 2*i;
+			glm::u8vec4 c = data[i*size.x+j];
+			if (c.r == 0 && c.g == 0 && c.b == 0) { 			// black -> wall
+				std::cout << "w ";
+				add_mesh_to_drawable("Wall", glm::vec3(x, y, 0));
+			} 
+			else if (c.r == 255 && c.g == 0 && c.b == 0) {		// red -> target
+				std::cout << "t ";
+				target = add_mesh_to_drawable("Target", glm::vec3(x, y, 0));
+			} 
+			else if (c.r == 0 && c.g == 0 && c.b == 255) {   	// blue -> player
+				std::cout << "p ";
+				player = add_mesh_to_drawable("Player", glm::vec3(x, y, 0));
+			} else {
+				std::cout << "  ";
+			}
+			
+			// floor
+			if ((i+j)%2 == 0)
+				add_mesh_to_drawable("Plane1", glm::vec3(x, y, -1));
+			else
+				add_mesh_to_drawable("Plane2", glm::vec3(x, y, -1));
+		}
+		std::cout << std::endl;
+	}
 }
 
 MazeMode::~MazeMode() {
@@ -128,26 +176,6 @@ bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 void MazeMode::update(float elapsed) {
-
-	//slowly rotates through [0,1):
-	wobble += elapsed / 10.0f;
-	wobble -= std::floor(wobble);
-
-	hip->rotation = hip_base_rotation * glm::angleAxis(
-		glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 1.0f, 0.0f)
-	);
-	upper_leg->rotation = upper_leg_base_rotation * glm::angleAxis(
-		glm::radians(7.0f * std::sin(wobble * 2.0f * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
-	lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
-		glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
-		glm::vec3(0.0f, 0.0f, 1.0f)
-	);
-
-	//move sound to follow leg tip position:
-	leg_tip_loop->set_position(get_leg_tip_position(), 1.0f / 60.0f);
 
 	//move camera:
 	{
@@ -230,9 +258,4 @@ void MazeMode::draw(glm::uvec2 const &drawable_size) {
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 	}
-}
-
-glm::vec3 MazeMode::get_leg_tip_position() {
-	//the vertex position here was read from the model in blender:
-	return lower_leg->make_local_to_world() * glm::vec4(-1.26137f, -11.861f, 0.0f, 1.0f);
 }
