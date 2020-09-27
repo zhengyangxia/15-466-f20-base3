@@ -65,23 +65,14 @@ Scene::Transform* MazeMode::add_mesh_to_drawable(std::string mesh_name, glm::vec
 	return t;
 }
 
-
-MazeMode::MazeMode() : scene(*maze_scene) {
-	//get pointer to camera for convenience:
-	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
-	camera = &scene.cameras.front();
-
-	//start music loop playing:
-	// (note: position will be over-ridden in update())
-	leg_tip_loop = Sound::loop_3D(*maze_sample, 1.0f, camera->transform->position, 10.0f);
-
-	while (scene.drawables.size() > 0) {
+void MazeMode::load_level(int level) {
+while (scene.drawables.size() > 0) {
 		scene.drawables.pop_back();
 	}
 
 	glm::uvec2 size(16, 16);
 	std::vector< glm::u8vec4 > data;
-	load_png(data_path("../maze/0.png"), &size, &data, UpperLeftOrigin);
+	load_png(data_path("../maze/" + std::to_string(level) + ".png"), &size, &data, UpperLeftOrigin);
 	for (size_t i = 0; i < size.y; ++i) {
 		for (size_t j = 0; j < size.x; ++j) {
 			size_t x = 2*j;
@@ -110,6 +101,21 @@ MazeMode::MazeMode() : scene(*maze_scene) {
 		}
 		std::cout << std::endl;
 	}
+}
+
+
+MazeMode::MazeMode() : scene(*maze_scene) {
+	//get pointer to camera for convenience:
+	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
+	camera = &scene.cameras.front();
+
+	load_level(level);
+
+	//start music loop playing:
+	// (note: position will be over-ridden in update())
+	leg_tip_loop = Sound::loop_3D(*maze_sample, 1.0f, camera->transform->position, 10.0f);
+
+	
 }
 
 MazeMode::~MazeMode() {

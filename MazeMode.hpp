@@ -36,8 +36,10 @@ struct MazeMode : Mode {
 
 	// util
 	Scene::Transform* add_mesh_to_drawable(std::string mesh_name, glm::vec3 position);
+	void load_level(int level);
 
 	// status
 	Scene::Transform *player = nullptr;
 	Scene::Transform *target = nullptr;
+	int level = 0;
 };
