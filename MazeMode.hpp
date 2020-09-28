@@ -14,7 +14,7 @@ struct MazeMode : Mode {
 
 	//functions called by main loop:
 	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
-	virtual void update(float elapsed) override;
+	virtual bool update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
 	
 
@@ -45,7 +45,7 @@ struct MazeMode : Mode {
 	// status
 	Scene::Transform *player = nullptr;
 	Scene::Transform *target = nullptr;
-	int level = 0;
+	static int level;
 	uint energy = 0;
 	int hit = -1;
 

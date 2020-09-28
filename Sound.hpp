@@ -135,6 +135,7 @@ extern struct Listener listener;
 
 //"panic button" to shut off all currently playing sounds:
 void stop_all_samples();
+void remove_all_samples();
 
 //set global volume:
 void set_volume(float new_volume, float ramp = 1.0f / 60.0f);

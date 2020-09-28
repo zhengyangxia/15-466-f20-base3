@@ -142,6 +142,12 @@ void Sound::stop_all_samples() {
 	unlock();
 }
 
+void Sound::remove_all_samples() {
+	lock();
+	playing_samples.clear();
+	unlock();
+}
+
 void Sound::set_volume(float new_volume, float ramp) {
 	lock();
 	volume.set(new_volume, ramp);

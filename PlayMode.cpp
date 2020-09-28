@@ -127,7 +127,7 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
-void PlayMode::update(float elapsed) {
+bool PlayMode::update(float elapsed) {
 
 	//slowly rotates through [0,1):
 	wobble += elapsed / 10.0f;
@@ -183,6 +183,8 @@ void PlayMode::update(float elapsed) {
 	right.downs = 0;
 	up.downs = 0;
 	down.downs = 0;
+
+	return false;
 }
 
 void PlayMode::draw(glm::uvec2 const &drawable_size) {

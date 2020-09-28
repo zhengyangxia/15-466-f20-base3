@@ -26,6 +26,8 @@
 #include <memory>
 #include <algorithm>
 
+int MazeMode::level;
+
 int main(int argc, char **argv) {
 #ifdef _WIN32
 	//when compiled on windows, unhandled exceptions don't have their message printed, which can make debugging simple issues difficult.
@@ -99,8 +101,12 @@ int main(int argc, char **argv) {
 	call_load_functions();
 
 	//------------ create game mode + make current --------------
+	
+	// int cur_level = 0;
+	MazeMode::level = 0;
+	bool next_level = false;
+	int total_level = 2;
 	Mode::set_current(std::make_shared< MazeMode >());
-
 	//------------ main loop ------------
 
 	//this inline function will be called whenever the window is resized,
@@ -165,7 +171,16 @@ int main(int argc, char **argv) {
 			//lag to avoid spiral of death:
 			elapsed = std::min(0.1f, elapsed);
 
-			Mode::current->update(elapsed);
+			next_level = Mode::current->update(elapsed);
+			if (next_level){
+				if (MazeMode::level >= total_level)
+					MazeMode::set_current(NULL);
+				else{
+					Sound::remove_all_samples();
+					Mode::set_current(std::make_shared< MazeMode >());
+				}
+				
+			}
 			if (!Mode::current) break;
 		}
 

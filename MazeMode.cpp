@@ -13,6 +13,7 @@
 
 #include <random>
 
+
 GLuint maze_meshes_for_lit_color_texture_program = 0;
 Load< MeshBuffer > maze_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 	MeshBuffer const *ret = new MeshBuffer(data_path("maze.pnct"));
@@ -37,9 +38,9 @@ Load< Scene > maze_scene(LoadTagDefault, []() -> Scene const * {
 	});
 });
 
-Load< Sound::Sample > maze_sample(LoadTagDefault, []() -> Sound::Sample const * {
-	return new Sound::Sample(data_path("digital-lemonade-by-kevin-macleod-from-filmmusic-io.wav"));//data_path("dusty-floor.opus"));
-});
+// Load< Sound::Sample > maze_sample(LoadTagDefault, []() -> Sound::Sample const * {
+// 	return new Sound::Sample(data_path("digital-lemonade-by-kevin-macleod-from-filmmusic-io.wav"));//data_path("dusty-floor.opus"));
+// });
 
 
 Scene::Transform* MazeMode::add_mesh_to_drawable(std::string mesh_name, glm::vec3 position) {
@@ -68,7 +69,8 @@ Scene::Transform* MazeMode::add_mesh_to_drawable(std::string mesh_name, glm::vec
 }
 
 void MazeMode::load_level(int level) {
-while (scene.drawables.size() > 0) {
+	std::cout << "loading level " << level << std::endl; 
+	while (scene.drawables.size() > 0) {
 		scene.drawables.pop_back();
 	}
 
@@ -111,8 +113,7 @@ while (scene.drawables.size() > 0) {
 		}
 		std::cout << std::endl;
 	}
-	camera = &scene.cameras.front();
-	camera->transform->position = player->position + glm::vec3(0.0f, 8.0f, 8.0f);
+	
 	
 }
 
@@ -126,11 +127,12 @@ MazeMode::MazeMode() : scene(*maze_scene) {
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
 	camera = &scene.cameras.front();
-
-	load_level(level);
-
+	
+	load_level(MazeMode::level);
+	camera->transform->position = player->position + glm::vec3(0.0f, 8.0f, 8.0f);
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
+	Sound::Sample const *maze_sample = new Sound::Sample(data_path("digital-lemonade-by-kevin-macleod-from-filmmusic-io.wav"));
 	music_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 10.0f);
 
 	
@@ -162,16 +164,16 @@ bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 bool MazeMode::legal(glm::ivec2 new_pos){
-	std::cout << new_pos.x << " " << new_pos.y << std::endl;
+	// std::cout << new_pos.x << " " << new_pos.y << std::endl;
 	if (new_pos.x < 0 || new_pos.y < 0 || new_pos.y >= map_size.y || new_pos.x >= map_size.x) return false;
-	if (map[new_pos.y][new_pos.x] != 'f'){
-		std::cout << map[new_pos.y][new_pos.x] << std::endl;
+	if (map[new_pos.y][new_pos.x] == 'w'){
+		// std::cout << map[new_pos.y][new_pos.x] << std::endl;
 		return false;
 	}
 	return true;
 }
 
-void MazeMode::update(float elapsed) {
+bool MazeMode::update(float elapsed) {
 
 	//move camera:
 	{
@@ -210,6 +212,11 @@ void MazeMode::update(float elapsed) {
 			player_pos += move;
 			player->position += move.x * dirx + move.y * diry;
 			camera->transform->position += move.x * dirx + move.y * diry;
+			if (map[player_pos.y][player_pos.x] == 't'){
+				MazeMode::level ++;
+				return true;
+			}
+			
 		}
 		
 		
@@ -229,8 +236,8 @@ void MazeMode::update(float elapsed) {
 	up.downs = 0;
 	down.downs = 0;
 	hit = -1;
+	return false;
 	// std::cout << music_loop->i << std::endl;
-
 	
 }
 	
