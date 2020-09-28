@@ -48,9 +48,9 @@ Scene::Transform* MazeMode::add_mesh_to_drawable(std::string mesh_name, glm::vec
 	scene.transforms.emplace_back();
 	Scene::Transform* t = &scene.transforms.back();
 	t->position = position;
-	if (mesh_name == "Wall") {
-		t->scale.z = 2.0;
-	}
+	// if (mesh_name == "Wall") {
+	// 	t->scale.z = 2.0;
+	// }
 	t->name = mesh_name;
 	t->parent = nullptr;
 
@@ -82,7 +82,7 @@ while (scene.drawables.size() > 0) {
 			glm::u8vec4 c = data[i*size.x+j];
 			if (c.r == 0 && c.g == 0 && c.b == 0) { 			// black -> wall
 				std::cout << "w ";
-				add_mesh_to_drawable("Wall", glm::vec3(x, y, 1));
+				add_mesh_to_drawable("Wall", glm::vec3(x, y, 0));
 			} 
 			else if (c.r == 255 && c.g == 0 && c.b == 0) {		// red -> target
 				std::cout << "t ";
@@ -103,11 +103,14 @@ while (scene.drawables.size() > 0) {
 		}
 		std::cout << std::endl;
 	}
+	camera = &scene.cameras.front();
+	camera->transform->position = player->position + glm::vec3(0.0f, 8.0f, 8.0f);
+	
 }
 
 
 size_t MazeMode::get_next_byte_pos() {
-	return (next_byte_pos + (size_t) (60.0 / bpm * sample_per_sec)) % sample_per_sec;
+	return next_byte_pos + (size_t) (60.0 / bpm * sample_per_sec);
 }
 
 
@@ -120,7 +123,7 @@ MazeMode::MazeMode() : scene(*maze_scene) {
 
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
-	leg_tip_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 10.0f);
+	music_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 10.0f);
 
 	
 }
@@ -131,60 +134,22 @@ MazeMode::~MazeMode() {
 bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
 
 	if (evt.type == SDL_KEYDOWN) {
-		if (evt.key.keysym.sym == SDLK_ESCAPE) {
-			SDL_SetRelativeMouseMode(SDL_FALSE);
-			return true;
-		} else if (evt.key.keysym.sym == SDLK_a) {
+		hit = music_loop->i;
+		if (evt.key.keysym.sym == SDLK_a) {
 			left.downs += 1;
-			left.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_d) {
 			right.downs += 1;
-			right.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_w) {
 			up.downs += 1;
-			up.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
 			down.downs += 1;
-			down.pressed = true;
-			return true;
-		}
-	} else if (evt.type == SDL_KEYUP) {
-		if (evt.key.keysym.sym == SDLK_a) {
-			left.pressed = false;
-			return true;
-		} else if (evt.key.keysym.sym == SDLK_d) {
-			right.pressed = false;
-			return true;
-		} else if (evt.key.keysym.sym == SDLK_w) {
-			up.pressed = false;
-			return true;
-		} else if (evt.key.keysym.sym == SDLK_s) {
-			down.pressed = false;
-			return true;
-		}
-	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
-		if (SDL_GetRelativeMouseMode() == SDL_FALSE) {
-			SDL_SetRelativeMouseMode(SDL_TRUE);
-			return true;
-		}
-	} else if (evt.type == SDL_MOUSEMOTION) {
-		if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
-			glm::vec2 motion = glm::vec2(
-				evt.motion.xrel / float(window_size.y),
-				-evt.motion.yrel / float(window_size.y)
-			);
-			camera->transform->rotation = glm::normalize(
-				camera->transform->rotation
-				* glm::angleAxis(-motion.x * camera->fovy, glm::vec3(0.0f, 1.0f, 0.0f))
-				* glm::angleAxis(motion.y * camera->fovy, glm::vec3(1.0f, 0.0f, 0.0f))
-			);
 			return true;
 		}
 	}
-
+	
 	return false;
 }
 
@@ -194,22 +159,37 @@ void MazeMode::update(float elapsed) {
 	{
 
 		//combine inputs into a move:
-		constexpr float PlayerSpeed = 30.0f;
+		// constexpr float PlayerSpeed = 30.0f;
 		glm::vec2 move = glm::vec2(0.0f);
-		if (left.pressed && !right.pressed) move.x =-1.0f;
-		if (!left.pressed && right.pressed) move.x = 1.0f;
-		if (down.pressed && !up.pressed) move.y =-1.0f;
-		if (!down.pressed && up.pressed) move.y = 1.0f;
+		move.x -= left.downs;
+		move.x += right.downs;
+		move.y -= down.downs;
+		move.y += up.downs;
 
 		//make it so that moving diagonally doesn't go faster:
-		if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
+		// if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
 
-		glm::mat4x3 frame = camera->transform->make_local_to_parent();
-		glm::vec3 right = frame[0];
-		//glm::vec3 up = frame[1];
-		glm::vec3 forward = -frame[2];
-
-		camera->transform->position += move.x * right + move.y * forward;
+		// glm::mat4x3 frame = camera->transform->make_local_to_parent();
+		// glm::vec3 right = frame[0];
+		// //glm::vec3 up = frame[1];
+		// glm::vec3 forward = -frame[2];
+		uint dis = hit % beat_interval;
+		
+		if (hit > 0){
+			if (dis <= 5000 || beat_interval-dis <= 5000){
+				energy ++;
+				if (energy > 3){
+					player->position.z = 2;
+				}
+			} else {
+				player->position.z = 0;
+				energy = 0;
+			}
+		}
+		
+		player->position += move.x * dirx + move.y * diry;
+		camera->transform->position += move.x * dirx + move.y * diry;
+		// std::cout << camera->transform->position.x << " " << camera->transform->position.y << " " << camera->transform->position.z << " " << std::endl;
 	}
 
 	{ //update listener to camera position:
@@ -224,12 +204,12 @@ void MazeMode::update(float elapsed) {
 	right.downs = 0;
 	up.downs = 0;
 	down.downs = 0;
+	hit = -1;
+	std::cout << music_loop->i << std::endl;
 
-	if (leg_tip_loop->i >= next_byte_pos) {
-		std::cout << "byte " << next_byte_pos << std::endl;
-		next_byte_pos = get_next_byte_pos();
-	}
+	
 }
+	
 
 void MazeMode::draw(glm::uvec2 const &drawable_size) {
 	//update camera aspect ratio for drawable:
@@ -266,12 +246,12 @@ void MazeMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text(std::string("Combo Count:")+std::to_string(energy),
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
+		lines.draw_text(std::string("Combo Count:")+std::to_string(energy),
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));

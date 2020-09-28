@@ -28,8 +28,7 @@ struct MazeMode : Mode {
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
 
-	//music coming from the tip of the leg (as a demonstration):
-	std::shared_ptr< Sound::PlayingSample > leg_tip_loop;
+	std::shared_ptr< Sound::PlayingSample > music_loop;
 	
 	//camera:
 	Scene::Camera *camera = nullptr;
@@ -43,8 +42,15 @@ struct MazeMode : Mode {
 	Scene::Transform *player = nullptr;
 	Scene::Transform *target = nullptr;
 	int level = 0;
+	uint energy = 0;
+	int hit = -1;
 
 	size_t next_byte_pos = 0;
 	size_t bpm = 120;
 	size_t sample_per_sec = 48000;
+	size_t beat_interval = 60.0f/bpm*sample_per_sec;
+
+	glm::vec3 dirx = glm::vec3(-2.0f, 0.0f, 0.0f);
+	glm::vec3 diry = glm::vec3(0.0f, -2.0f, 0.0f);
+	glm::vec3 dirz = glm::vec3(0.0f, 0.0f, 1.0f);
 };
