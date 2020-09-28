@@ -192,9 +192,9 @@ void MazeMode::update(float elapsed) {
 		// //glm::vec3 up = frame[1];
 		// glm::vec3 forward = -frame[2];
 		
+		// std::cout << music_loop->i << std::endl;	
+		if (hit > 0 && (legal(player_pos+move) || energy > 3)){
 			
-		if (hit > 0 && legal(player_pos+move)){
-			std::cout << hit << std::endl;
 			uint dis = hit % beat_interval;
 			if (dis <= 5000 || beat_interval-dis <= 5000){
 				energy ++;
@@ -202,7 +202,8 @@ void MazeMode::update(float elapsed) {
 					player->position.z = 2;
 				}
 			} else {
-				player->position.z = 0;
+				if (map[player_pos.y][player_pos.x] == 'f')
+					player->position.z = 0;
 				energy = 0;
 			}
 		// std::cout << player->position.x << " " << player->position.y << std::endl;
