@@ -49,6 +49,9 @@ Scene::Transform* MazeMode::add_mesh_to_drawable(std::string mesh_name, glm::vec
 	scene.transforms.emplace_back();
 	Scene::Transform* t = &scene.transforms.back();
 	t->position = position;
+	if (mesh_name == "Wall") {
+		t->scale.z = 2.0;
+	}
 	t->name = mesh_name;
 	t->parent = nullptr;
 
@@ -70,7 +73,7 @@ while (scene.drawables.size() > 0) {
 		scene.drawables.pop_back();
 	}
 
-	glm::uvec2 size(16, 16);
+	glm::uvec2 size;
 	std::vector< glm::u8vec4 > data;
 	load_png(data_path("../maze/" + std::to_string(level) + ".png"), &size, &data, UpperLeftOrigin);
 	for (size_t i = 0; i < size.y; ++i) {
@@ -80,7 +83,7 @@ while (scene.drawables.size() > 0) {
 			glm::u8vec4 c = data[i*size.x+j];
 			if (c.r == 0 && c.g == 0 && c.b == 0) { 			// black -> wall
 				std::cout << "w ";
-				add_mesh_to_drawable("Wall", glm::vec3(x, y, 0));
+				add_mesh_to_drawable("Wall", glm::vec3(x, y, 1));
 			} 
 			else if (c.r == 255 && c.g == 0 && c.b == 0) {		// red -> target
 				std::cout << "t ";
