@@ -16,8 +16,10 @@ struct MazeMode : Mode {
 	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
+	
 
 	//----- game state -----
+	bool legal(glm::ivec2 new_pos);
 
 	//input tracking:
 	struct Button {
@@ -37,6 +39,8 @@ struct MazeMode : Mode {
 	Scene::Transform* add_mesh_to_drawable(std::string mesh_name, glm::vec3 position);
 	void load_level(int level);
 	size_t get_next_byte_pos();
+	char **map = nullptr;
+	glm::uvec2 map_size;
 
 	// status
 	Scene::Transform *player = nullptr;
@@ -50,7 +54,9 @@ struct MazeMode : Mode {
 	size_t sample_per_sec = 48000;
 	size_t beat_interval = 60.0f/bpm*sample_per_sec;
 
-	glm::vec3 dirx = glm::vec3(-2.0f, 0.0f, 0.0f);
-	glm::vec3 diry = glm::vec3(0.0f, -2.0f, 0.0f);
-	glm::vec3 dirz = glm::vec3(0.0f, 0.0f, 1.0f);
+	glm::ivec3 dirx = glm::ivec3(-2, 0, 0);
+	glm::ivec3 diry = glm::ivec3(0, 2, 0);
+	glm::ivec3 dirz = glm::ivec3(0, 0, 1);
+
+	glm::ivec2 player_pos = glm::ivec2(0,0);
 };

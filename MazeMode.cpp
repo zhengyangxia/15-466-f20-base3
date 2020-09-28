@@ -75,31 +75,39 @@ while (scene.drawables.size() > 0) {
 	glm::uvec2 size;
 	std::vector< glm::u8vec4 > data;
 	load_png(data_path("../maze/" + std::to_string(level) + ".png"), &size, &data, UpperLeftOrigin);
+	map = new char*[size.y];
+	map_size = size;
 	for (size_t i = 0; i < size.y; ++i) {
+		map[i] = new char[size.x];
 		for (size_t j = 0; j < size.x; ++j) {
 			size_t x = 2*j;
 			size_t y = 2*i;
 			glm::u8vec4 c = data[i*size.x+j];
 			if (c.r == 0 && c.g == 0 && c.b == 0) { 			// black -> wall
 				std::cout << "w ";
-				add_mesh_to_drawable("Wall", glm::vec3(x, y, 0));
+				map[i][j] = 'w';
+				add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y, 0));
 			} 
 			else if (c.r == 255 && c.g == 0 && c.b == 0) {		// red -> target
 				std::cout << "t ";
-				target = add_mesh_to_drawable("Target", glm::vec3(x, y, 0));
+				map[i][j] = 't';
+				target = add_mesh_to_drawable("Target", glm::vec3(size.x*2-x, y, 0));
 			} 
 			else if (c.r == 0 && c.g == 0 && c.b == 255) {   	// blue -> player
 				std::cout << "p ";
-				player = add_mesh_to_drawable("Player", glm::vec3(x, y, 0));
+				map[i][j] = 'f';
+				player_pos = glm::ivec2(j, i);
+				player = add_mesh_to_drawable("Player", glm::vec3(size.x*2-x, y, 0));
 			} else {
 				std::cout << "  ";
+				map[i][j] = 'f';
 			}
 			
 			// floor
 			if ((i+j)%2 == 0)
-				add_mesh_to_drawable("Plane1", glm::vec3(x, y, -1));
+				add_mesh_to_drawable("Plane1", glm::vec3(size.x*2-x, y, -1));
 			else
-				add_mesh_to_drawable("Plane2", glm::vec3(x, y, -1));
+				add_mesh_to_drawable("Plane2", glm::vec3(size.x*2-x, y, -1));
 		}
 		std::cout << std::endl;
 	}
@@ -153,6 +161,16 @@ bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
+bool MazeMode::legal(glm::ivec2 new_pos){
+	std::cout << new_pos.x << " " << new_pos.y << std::endl;
+	if (new_pos.x < 0 || new_pos.y < 0 || new_pos.y >= map_size.y || new_pos.x >= map_size.x) return false;
+	if (map[new_pos.y][new_pos.x] != 'f'){
+		std::cout << map[new_pos.y][new_pos.x] << std::endl;
+		return false;
+	}
+	return true;
+}
+
 void MazeMode::update(float elapsed) {
 
 	//move camera:
@@ -160,11 +178,11 @@ void MazeMode::update(float elapsed) {
 
 		//combine inputs into a move:
 		// constexpr float PlayerSpeed = 30.0f;
-		glm::vec2 move = glm::vec2(0.0f);
+		glm::ivec2 move = glm::ivec2(0,0);
 		move.x -= left.downs;
 		move.x += right.downs;
-		move.y -= down.downs;
-		move.y += up.downs;
+		move.y += down.downs;
+		move.y -= up.downs;
 
 		//make it so that moving diagonally doesn't go faster:
 		// if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
@@ -173,9 +191,11 @@ void MazeMode::update(float elapsed) {
 		// glm::vec3 right = frame[0];
 		// //glm::vec3 up = frame[1];
 		// glm::vec3 forward = -frame[2];
-		uint dis = hit % beat_interval;
 		
-		if (hit > 0){
+			
+		if (hit > 0 && legal(player_pos+move)){
+			std::cout << hit << std::endl;
+			uint dis = hit % beat_interval;
 			if (dis <= 5000 || beat_interval-dis <= 5000){
 				energy ++;
 				if (energy > 3){
@@ -185,10 +205,13 @@ void MazeMode::update(float elapsed) {
 				player->position.z = 0;
 				energy = 0;
 			}
+		// std::cout << player->position.x << " " << player->position.y << std::endl;
+			player_pos += move;
+			player->position += move.x * dirx + move.y * diry;
+			camera->transform->position += move.x * dirx + move.y * diry;
 		}
 		
-		player->position += move.x * dirx + move.y * diry;
-		camera->transform->position += move.x * dirx + move.y * diry;
+		
 		// std::cout << camera->transform->position.x << " " << camera->transform->position.y << " " << camera->transform->position.z << " " << std::endl;
 	}
 
@@ -205,7 +228,7 @@ void MazeMode::update(float elapsed) {
 	up.downs = 0;
 	down.downs = 0;
 	hit = -1;
-	std::cout << music_loop->i << std::endl;
+	// std::cout << music_loop->i << std::endl;
 
 	
 }
