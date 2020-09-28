@@ -40,7 +40,7 @@ struct MazeMode : Mode {
 	void load_level(int level);
 	size_t get_next_byte_pos();
 	char **map = nullptr;
-	glm::uvec2 map_size;
+	glm::ivec2 map_size;
 
 	// status
 	Scene::Transform *player = nullptr;
