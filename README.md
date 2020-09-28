@@ -12,7 +12,11 @@ How To Play:
 
 (TODO: describe the controls and (if needed) goals/strategy.)
 
-Sources: (TODO: list a source URL for any assets you did not create yourself. Make sure you have a license for the asset.)
+Sources: 
+    - Music:
+    Digital Lemonade by Kevin MacLeod
+    Link: https://incompetech.filmmusic.io/song/3648-digital-lemonade
+    License: http://creativecommons.org/licenses/by/4.0/
 
 This game was built with [NEST](NEST.md).
 

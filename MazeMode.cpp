@@ -23,7 +23,6 @@ Load< MeshBuffer > maze_meshes(LoadTagDefault, []() -> MeshBuffer const * {
 Load< Scene > maze_scene(LoadTagDefault, []() -> Scene const * {
 	return new Scene(data_path("maze.scene"), [&](Scene &scene, Scene::Transform *transform, std::string const &mesh_name){
 		Mesh const &mesh = maze_meshes->lookup(mesh_name);
-		std::cout << mesh_name << std::endl;
 
 		scene.drawables.emplace_back(transform);
 		Scene::Drawable &drawable = scene.drawables.back();
@@ -39,7 +38,7 @@ Load< Scene > maze_scene(LoadTagDefault, []() -> Scene const * {
 });
 
 Load< Sound::Sample > maze_sample(LoadTagDefault, []() -> Sound::Sample const * {
-	return new Sound::Sample(data_path("dusty-floor.opus"));
+	return new Sound::Sample(data_path("digital-lemonade-by-kevin-macleod-from-filmmusic-io.wav"));//data_path("dusty-floor.opus"));
 });
 
 
@@ -107,6 +106,11 @@ while (scene.drawables.size() > 0) {
 }
 
 
+size_t MazeMode::get_next_byte_pos() {
+	return (next_byte_pos + (size_t) (60.0 / bpm * sample_per_sec)) % sample_per_sec;
+}
+
+
 MazeMode::MazeMode() : scene(*maze_scene) {
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
@@ -116,7 +120,7 @@ MazeMode::MazeMode() : scene(*maze_scene) {
 
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
-	leg_tip_loop = Sound::loop_3D(*maze_sample, 1.0f, camera->transform->position, 10.0f);
+	leg_tip_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 10.0f);
 
 	
 }
@@ -220,6 +224,11 @@ void MazeMode::update(float elapsed) {
 	right.downs = 0;
 	up.downs = 0;
 	down.downs = 0;
+
+	if (leg_tip_loop->i >= next_byte_pos) {
+		std::cout << "byte " << next_byte_pos << std::endl;
+		next_byte_pos = get_next_byte_pos();
+	}
 }
 
 void MazeMode::draw(glm::uvec2 const &drawable_size) {
