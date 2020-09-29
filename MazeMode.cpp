@@ -115,8 +115,10 @@ void MazeMode::load_level(int level) {
 				player_pos = glm::ivec2(j, i);
 				player = add_mesh_to_drawable("water opossum ", glm::vec3(size.x*2-x, y, 0));
 				bar = add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y+2, 4));
-				bar->scale = glm::vec3(1.0f, 0.1f, 0.1f);
-				bar_base_position = bar->position + dirx;
+				bar_ref = add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y+2, 4));
+				bar->scale = glm::vec3(0.5f, 0.1f, 0.1f);
+				bar_ref->scale = glm::vec3(0.5f, 0.1f, 0.1f);
+				bar_base_position = bar->position;
 				
 			} else {
 				std::cout << "  ";
@@ -158,6 +160,7 @@ bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 
 	if (evt.type == SDL_KEYDOWN) {
 		hit = music_loop->i;
+		bar->scale *= 1.1f;
 		if (evt.key.keysym.sym == SDLK_a) {
 			left.downs += 1;
 			return true;
@@ -208,14 +211,14 @@ bool MazeMode::update(float elapsed) {
 		// glm::vec3 forward = -frame[2];
 		
 		// std::cout << music_loop->i << std::endl;
-		float dis = ((music_loop->i)%beat_interval)/(float)beat_interval;
+		float dis = ((music_loop->i)%beat_interval)/(float)beat_interval-0.5f;
 		std::cout << dis << std::endl;
 		
-		bar->position = bar_base_position - dis * dirx * 4.0f;
-
+		bar->position = bar_base_position + dis * dirx * 2.0f;
+		bar_ref->position = bar_base_position;
 
 		if (hit > 0 && legal(player_pos+(glm::ivec2)move, energy)){
-			
+			// bar->position = bar_base_position;
 			uint dis = hit % beat_interval;
 			std::cout << hit << " " << dis << std::endl;
 			if (dis <= 2000 || beat_interval-dis <= 2000){
@@ -252,6 +255,7 @@ bool MazeMode::update(float elapsed) {
 	up.downs = 0;
 	down.downs = 0;
 	hit = -1;
+	bar->scale /= 1.1f;
 	return false;
 	// std::cout << music_loop->i << std::endl;
 	
