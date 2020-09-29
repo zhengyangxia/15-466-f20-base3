@@ -90,6 +90,7 @@ void MazeMode::load_level(int level) {
 	glm::uvec2 size;
 	std::vector< glm::u8vec4 > data;
 	load_png(data_path("../maze/" + std::to_string(level) + ".png"), &size, &data, UpperLeftOrigin);
+	
 	map = new char*[size.y];
 	map_size = size;
 	
@@ -130,6 +131,8 @@ void MazeMode::load_level(int level) {
 		}
 		std::cout << std::endl;
 	}
+	Sound::Sample const *maze_sample = new Sound::Sample(data_path(std::to_string(level)+".wav"));
+	music_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 5.0f);
 }
 
 
@@ -147,8 +150,7 @@ MazeMode::MazeMode() : scene(*maze_scene) {
 	camera->transform->position = player->position + glm::vec3(0.0f, 12.0f, 12.0f);
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
-	Sound::Sample const *maze_sample = new Sound::Sample(data_path("digital-lemonade-by-kevin-macleod-from-filmmusic-io.wav"));
-	music_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 5.0f);
+	
 
 	
 }
@@ -305,7 +307,15 @@ void MazeMode::draw(glm::uvec2 const &drawable_size) {
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
 		lines.draw_text(std::string("Combo Count:")+std::to_string(energy)+"/4",
-			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
+			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + 0.1f * H - ofs, 0.0),
+			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+		lines.draw_text(std::string("Level: ")+std::to_string(MazeMode::level+1),
+			glm::vec3(-aspect + 0.1f * H, 0.9f-0.1f * H, 0.0),
+			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+		lines.draw_text(std::string("Level: ")+std::to_string(MazeMode::level+1),
+			glm::vec3(-aspect + 0.1f * H + ofs, 0.9f-0.1f * H - ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
 	}
