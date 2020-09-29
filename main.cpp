@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 
 	//create window:
 	SDL_Window *window = SDL_CreateWindow(
-		"Find Your Cake", //TODO: remember to set a title for your game!
+		"I Believe I Can Fly", //TODO: remember to set a title for your game!
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		480, 360, //TODO: modify window size if you'd like
 		SDL_WINDOW_OPENGL
