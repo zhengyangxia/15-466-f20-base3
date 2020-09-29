@@ -40,6 +40,9 @@ struct MazeMode : Mode {
 	void load_level(int level);
 	char **map = nullptr;
 	glm::ivec2 map_size;
+	glm::vec3 dirx = glm::vec3(-2.0f, 0.0f, 0.0f);
+	glm::vec3 diry = glm::vec3(0.0f, 2.0f, 0.0f);
+	glm::vec3 dirz = glm::vec3(0.0f, 0.0f, -1.0f);
 
 	// status
 	Scene::Transform *player = nullptr;
@@ -57,15 +60,10 @@ struct MazeMode : Mode {
 	bool moving = false;
 	bool miss = false;
 	int player_dir = 0;
-	int bpm[3] = {73, 125, 105};
+	int bpm[3] = {73, 125, 80};
 	int beat_offset[3] = {20352, 40, 56304};
 	int sample_per_sec = 48000;
 	int beat_interval;
 	float beat_range = 0.15f;
-
-	glm::vec3 dirx = glm::vec3(-2.0f, 0.0f, 0.0f);
-	glm::vec3 diry = glm::vec3(0.0f, 2.0f, 0.0f);
-	glm::vec3 dirz = glm::vec3(0.0f, 0.0f, -1.0f);
-
 	glm::ivec2 player_pos = glm::ivec2(0,0);
 };

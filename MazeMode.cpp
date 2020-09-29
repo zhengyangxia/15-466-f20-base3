@@ -39,10 +39,6 @@ Load< Scene > maze_scene(LoadTagDefault, []() -> Scene const * {
 	});
 });
 
-// Load< Sound::Sample > maze_sample(LoadTagDefault, []() -> Sound::Sample const * {
-// 	return new Sound::Sample(data_path("digital-lemonade-by-kevin-macleod-from-filmmusic-io.wav"));//data_path("dusty-floor.opus"));
-// });
-
 
 Scene::Transform* MazeMode::add_mesh_to_drawable(std::string mesh_name, glm::vec3 position) {
 	Mesh const& mesh = maze_meshes->lookup(mesh_name);
@@ -114,9 +110,8 @@ void MazeMode::load_level(int level) {
 				player = add_mesh_to_drawable("water opossum ", glm::vec3(size.x*2-x, y, 0));
 				bar = add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y+2, 5));
 				bar_ref = add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y+2, 5));
-				bar->scale = glm::vec3(0.25f, 0.05f, 0.05f);
-				bar_ref->scale = glm::vec3(0.25f, 0.05f, 0.05f);
-				// bar_base_position = bar->position;
+				bar->scale = glm::vec3(0.05f, 0.25f, 0.05f);
+				bar_ref->scale = glm::vec3(0.05f, 0.25f, 0.05f);
 				player_base_position = player->position;
 				player_base_rotation = player->rotation;
 			} else {
@@ -143,8 +138,6 @@ MazeMode::MazeMode() : scene(*maze_scene) {
 	load_level(MazeMode::level);
 	camera->transform->position = player->position + glm::vec3(0.0f, 12.0f, 12.0f);
 	camera_base_position = camera->transform->position;
-	//start music loop playing:
-	// (note: position will be over-ridden in update())
 	
 
 	
@@ -159,22 +152,18 @@ bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		hit = music_loop->i;
 		bar->scale *= 1.5f;
 		if (evt.key.keysym.sym == SDLK_a) {
-			// player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f) * glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f) * glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f);
 			left.pressed = true;
 			moving = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_d) {
-			// player->rotation = glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
 			right.pressed = true;
 			moving = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_w) {
-			// player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f) * glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
 			moving = true;
 			up.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
-			// player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, -0.7071f) * glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
 			moving = true;
 			down.pressed = true;
 			return true;
@@ -206,7 +195,6 @@ bool MazeMode::update(float elapsed) {
 	float dis = ((music_loop->i-beat_offset[level])%beat_interval)/(float)beat_interval-0.5f;
 
 	if (moving)
-	//move camera:
 	{
 
 		//combine inputs into a move:
@@ -276,10 +264,9 @@ bool MazeMode::update(float elapsed) {
 	
 	if (dis < -beat_range)
 		miss = true;
-	bar->scale = glm::vec3(0.25f, 0.05f, 0.05f);
+	bar->scale = glm::vec3(0.05f, 0.25f, 0.05f);
 	bar_ref->position = camera->transform->position + bar_offset;
 	bar->position = bar_ref->position + dis * dirx * 4.0f;
-	//reset button press counters:
 	
 	return false;
 	
@@ -291,7 +278,6 @@ void MazeMode::draw(glm::uvec2 const &drawable_size) {
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
 	
 	//set up light type and position for lit_color_texture_program:
-	// TODO: consider using the Light(s) in the scene to do this
 	glUseProgram(lit_color_texture_program->program);
 	glUniform1i(lit_color_texture_program->LIGHT_TYPE_int, 1);
 	GL_ERRORS();
