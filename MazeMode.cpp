@@ -79,6 +79,7 @@ void MazeMode::load_level(int level) {
 	load_png(data_path("../maze/" + std::to_string(level) + ".png"), &size, &data, UpperLeftOrigin);
 	map = new char*[size.y];
 	map_size = size;
+	
 	for (size_t i = 0; i < size.y; ++i) {
 		map[i] = new char[size.x];
 		for (size_t j = 0; j < size.x; ++j) {
@@ -100,6 +101,9 @@ void MazeMode::load_level(int level) {
 				map[i][j] = 'f';
 				player_pos = glm::ivec2(j, i);
 				player = add_mesh_to_drawable("Player", glm::vec3(size.x*2-x, y, 0));
+				bar = add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y+2, 4));
+				bar->scale = glm::vec3(1.0f, 0.1f, 0.1f);
+				bar_base_position = bar->position + dirx;
 			} else {
 				std::cout << "  ";
 				map[i][j] = 'f';
@@ -133,7 +137,7 @@ MazeMode::MazeMode() : scene(*maze_scene) {
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
 	Sound::Sample const *maze_sample = new Sound::Sample(data_path("digital-lemonade-by-kevin-macleod-from-filmmusic-io.wav"));
-	music_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 10.0f);
+	music_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 5.0f);
 
 	
 }
@@ -163,10 +167,10 @@ bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
-bool MazeMode::legal(glm::ivec2 new_pos){
+bool MazeMode::legal(glm::ivec2 new_pos, uint energy){
 	// std::cout << new_pos.x << " " << new_pos.y << std::endl;
 	if (new_pos.x < 0 || new_pos.y < 0 || new_pos.y >= map_size.y || new_pos.x >= map_size.x) return false;
-	if (map[new_pos.y][new_pos.x] == 'w'){
+	if (map[new_pos.y][new_pos.x] == 'w' && energy <= 3){
 		// std::cout << map[new_pos.y][new_pos.x] << std::endl;
 		return false;
 	}
@@ -180,7 +184,7 @@ bool MazeMode::update(float elapsed) {
 
 		//combine inputs into a move:
 		// constexpr float PlayerSpeed = 30.0f;
-		glm::ivec2 move = glm::ivec2(0,0);
+		glm::vec2 move = glm::ivec2(0.0f);
 		move.x -= left.downs;
 		move.x += right.downs;
 		move.y += down.downs;
@@ -194,41 +198,44 @@ bool MazeMode::update(float elapsed) {
 		// //glm::vec3 up = frame[1];
 		// glm::vec3 forward = -frame[2];
 		
-		// std::cout << music_loop->i << std::endl;	
-		if (hit > 0 && (legal(player_pos+move) || energy > 3)){
+		// std::cout << music_loop->i << std::endl;
+		float dis = ((music_loop->i)%beat_interval)/(float)beat_interval;
+		std::cout << dis << std::endl;
+		
+		bar->position = bar_base_position - dis * dirx * 4.0f;
+
+
+		if (hit > 0 && legal(player_pos+(glm::ivec2)move, energy)){
 			
 			uint dis = hit % beat_interval;
-			if (dis <= 5000 || beat_interval-dis <= 5000){
+			std::cout << hit << " " << dis << std::endl;
+			if (dis <= 2000 || beat_interval-dis <= 2000){
 				energy ++;
 				if (energy > 3){
 					player->position.z = 2;
 				}
 			} else {
-				if (map[player_pos.y][player_pos.x] == 'f')
+				if (map[player_pos.y][player_pos.x] == 'f'){
 					player->position.z = 0;
+				}
 				energy = 0;
 			}
 		// std::cout << player->position.x << " " << player->position.y << std::endl;
-			player_pos += move;
+			player_pos += (glm::ivec2)move;
 			player->position += move.x * dirx + move.y * diry;
+			bar_base_position += move.x * dirx + move.y * diry;
 			camera->transform->position += move.x * dirx + move.y * diry;
 			if (map[player_pos.y][player_pos.x] == 't'){
 				MazeMode::level ++;
 				return true;
 			}
-			
+			Sound::listener.set_position_right(camera->transform->position, dirx, 1.0f / 60.0f);
 		}
 		
 		
 		// std::cout << camera->transform->position.x << " " << camera->transform->position.y << " " << camera->transform->position.z << " " << std::endl;
 	}
 
-	{ //update listener to camera position:
-		glm::mat4x3 frame = camera->transform->make_local_to_parent();
-		glm::vec3 right = frame[0];
-		glm::vec3 at = frame[3];
-		Sound::listener.set_position_right(at, right, 1.0f / 60.0f);
-	}
 
 	//reset button press counters:
 	left.downs = 0;
@@ -245,7 +252,7 @@ bool MazeMode::update(float elapsed) {
 void MazeMode::draw(glm::uvec2 const &drawable_size) {
 	//update camera aspect ratio for drawable:
 	camera->aspect = float(drawable_size.x) / float(drawable_size.y);
-
+	
 	//set up light type and position for lit_color_texture_program:
 	// TODO: consider using the Light(s) in the scene to do this
 	glUseProgram(lit_color_texture_program->program);
@@ -253,7 +260,7 @@ void MazeMode::draw(glm::uvec2 const &drawable_size) {
 	GL_ERRORS();
 	glUniform3fv(lit_color_texture_program->LIGHT_DIRECTION_vec3, 1, glm::value_ptr(glm::vec3(0.0f, 0.0f,-1.0f)));
 	GL_ERRORS();
-	glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 0.95f)));
+	glUniform3fv(lit_color_texture_program->LIGHT_ENERGY_vec3, 1, glm::value_ptr(glm::vec3(1.0f, 1.0f, 1.0f)));
 	GL_ERRORS();
 	glUseProgram(0);
 
@@ -277,12 +284,12 @@ void MazeMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text(std::string("Combo Count:")+std::to_string(energy),
+		lines.draw_text(std::string("Combo Count:")+std::to_string(energy)+"/4",
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text(std::string("Combo Count:")+std::to_string(energy),
+		lines.draw_text(std::string("Combo Count:")+std::to_string(energy)+"/4",
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
