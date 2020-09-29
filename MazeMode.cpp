@@ -82,7 +82,7 @@ Scene::Transform* MazeMode::add_mesh_to_drawable(std::string mesh_name, glm::vec
 }
 
 void MazeMode::load_level(int level) {
-	std::cout << "loading level " << level << std::endl; 
+
 	while (scene.drawables.size() > 0) {
 		scene.drawables.pop_back();
 	}
@@ -101,17 +101,14 @@ void MazeMode::load_level(int level) {
 			size_t y = 2*i;
 			glm::u8vec4 c = data[i*size.x+j];
 			if (c.r == 0 && c.g == 0 && c.b == 0) { 			// black -> wall
-				std::cout << "w ";
 				map[i][j] = 'w';
 				add_mesh_to_drawable("Building", glm::vec3(size.x*2-x, y, 0));
 			} 
 			else if (c.r == 255 && c.g == 0 && c.b == 0) {		// red -> target
-				std::cout << "t ";
 				map[i][j] = 't';
 				target = add_mesh_to_drawable("cake", glm::vec3(size.x*2-x, y, 0));
 			} 
 			else if (c.r == 0 && c.g == 0 && c.b == 255) {   	// blue -> player
-				std::cout << "p ";
 				map[i][j] = 'f';
 				player_pos = glm::ivec2(j, i);
 				player = add_mesh_to_drawable("water opossum ", glm::vec3(size.x*2-x, y, 0));
@@ -123,14 +120,13 @@ void MazeMode::load_level(int level) {
 				player_base_position = player->position;
 				player_base_rotation = player->rotation;
 			} else {
-				std::cout << "  ";
 				map[i][j] = 'f';
 			}
 			
 			// floor
 			add_mesh_to_drawable("Floor", glm::vec3(size.x*2-x, y, 0));
 		}
-		std::cout << std::endl;
+		
 	}
 	Sound::Sample const *maze_sample = new Sound::Sample(data_path(std::to_string(level)+".wav"));
 	music_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 5.0f);
@@ -189,10 +185,8 @@ bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 }
 
 bool MazeMode::legal(glm::ivec2 new_pos, uint energy){
-	// std::cout << new_pos.x << " " << new_pos.y << std::endl;
 	if (new_pos.x < 0 || new_pos.y < 0 || new_pos.y >= map_size.y || new_pos.x >= map_size.x) return false;
 	if (map[new_pos.y][new_pos.x] == 'w' && energy <= 3){
-		// std::cout << map[new_pos.y][new_pos.x] << std::endl;
 		return false;
 	}
 	return true;
@@ -210,8 +204,6 @@ void MazeMode::end_move(){
 bool MazeMode::update(float elapsed) {
 
 	float dis = ((music_loop->i)%beat_interval)/(float)beat_interval-0.5f;
-	
-	
 
 	if (moving)
 	//move camera:
@@ -249,53 +241,44 @@ bool MazeMode::update(float elapsed) {
 				player_base_rotation = player->rotation;
 				camera_base_position = camera->transform->position;
 				player_dir = new_dir;
-				moving = false;
 				end_move();
+				if (energy <= 3 && map[player_pos.y][player_pos.x] == 'f')
+					player_base_position.z = 0;
+				if (map[player_pos.y][player_pos.x] == 't'){
+					MazeMode::level ++;
+					return true;
+				}
 			}
 			
 
-			// if (hit > 0){
-			// 	if (std::abs(dis) <= beat_range){
-			// 		miss = false;
-			// 		energy ++;
-			// 		if (energy > 3){
-			// 			player->position.z = 2;
-			// 		}
-			// 	} 
-			// // std::cout << player->position.x << " " << player->position.y << std::endl;
-				
-			// 	if (map[player_pos.y][player_pos.x] == 't'){
-			// 		MazeMode::level ++;
-			// 		return true;
-			// 	}
-				
-			// } else {
-			// 	if (dis > beat_range){
-			// 		if (miss){
-			// 			energy = 0;
-			// 			if (map[player_pos.y][player_pos.x] == 'f')
-			// 				player->position.z = 0;
-			// 		}
-			// 	} else if (dis < beat_range){
-			// 		miss = true;
-			// 	}
-			// }
-		// std::cout << hittable << " " << dis << std::endl;
-		
+			if (hit > 0){
+				if (std::abs(dis) <= beat_range && miss){
+					miss = false;
+					energy ++;
+					if (energy > 3){
+						player_base_position.z = 2;
+					}
+				} 
+				hit = -1;
+			}
 				
 		} else {
 			end_move();
 		}
 	
-		// std::cout << camera->transform->position.x << " " << camera->transform->position.y << " " << camera->transform->position.z << " " << std::endl;
+	
 	}
+	if (dis > beat_range && miss)
+		energy = 0;
+	
+	if (dis < -beat_range)
+		miss = true;
 	bar->scale = glm::vec3(0.25f, 0.05f, 0.05f);
 	bar_ref->position = camera->transform->position + bar_offset;
 	bar->position = bar_ref->position + dis * dirx * 4.0f;
 	//reset button press counters:
 	
 	return false;
-	// std::cout << music_loop->i << std::endl;
 	
 }
 	

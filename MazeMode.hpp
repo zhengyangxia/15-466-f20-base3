@@ -57,12 +57,10 @@ struct MazeMode : Mode {
 	bool moving = false;
 	bool miss = false;
 	int player_dir = 0;
-
-	int next_byte_pos = 0;
 	int bpm[3] = {120, 125, 105};
 	int sample_per_sec = 48000;
 	int beat_interval;
-	float beat_range = 0.2f;
+	float beat_range = 0.15f;
 
 	glm::vec3 dirx = glm::vec3(-2.0f, 0.0f, 0.0f);
 	glm::vec3 diry = glm::vec3(0.0f, 2.0f, 0.0f);
