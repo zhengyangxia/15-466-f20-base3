@@ -117,10 +117,11 @@ void MazeMode::load_level(int level) {
 				player = add_mesh_to_drawable("water opossum ", glm::vec3(size.x*2-x, y, 0));
 				bar = add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y+2, 5));
 				bar_ref = add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y+2, 5));
-				bar->scale = glm::vec3(0.5f, 0.1f, 0.1f);
-				bar_ref->scale = glm::vec3(0.5f, 0.1f, 0.1f);
-				bar_base_position = bar->position;
-				
+				bar->scale = glm::vec3(0.25f, 0.05f, 0.05f);
+				bar_ref->scale = glm::vec3(0.25f, 0.05f, 0.05f);
+				// bar_base_position = bar->position;
+				player_base_position = player->position;
+				player_base_rotation = player->rotation;
 			} else {
 				std::cout << "  ";
 				map[i][j] = 'f';
@@ -145,6 +146,7 @@ MazeMode::MazeMode() : scene(*maze_scene) {
 	
 	load_level(MazeMode::level);
 	camera->transform->position = player->position + glm::vec3(0.0f, 12.0f, 12.0f);
+	camera_base_position = camera->transform->position;
 	//start music loop playing:
 	// (note: position will be over-ridden in update())
 	
@@ -156,25 +158,29 @@ MazeMode::~MazeMode() {
 }
 
 bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
-
+	if (moving) return false;
 	if (evt.type == SDL_KEYDOWN) {
 		hit = music_loop->i;
-		bar->scale = glm::vec3(0.55f, 0.11f, 0.11f);
+		bar->scale *= 1.5f;
 		if (evt.key.keysym.sym == SDLK_a) {
-			player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f) * glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f) * glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f);
-			left.downs += 1;
+			// player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f) * glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f) * glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f);
+			left.pressed = true;
+			moving = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_d) {
-			player->rotation = glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
-			right.downs += 1;
+			// player->rotation = glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
+			right.pressed = true;
+			moving = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_w) {
-			player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f) * glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
-			up.downs += 1;
+			// player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f) * glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
+			moving = true;
+			up.pressed = true;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
-			player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, -0.7071f) * glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
-			down.downs += 1;
+			// player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, -0.7071f) * glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
+			moving = true;
+			down.pressed = true;
 			return true;
 		}
 	}
@@ -192,77 +198,102 @@ bool MazeMode::legal(glm::ivec2 new_pos, uint energy){
 	return true;
 }
 
+void MazeMode::end_move(){
+	left.pressed = false;
+	right.pressed = false;
+	down.pressed = false;
+	up.pressed = false;
+	
+	moving = false;
+}
+
 bool MazeMode::update(float elapsed) {
 
+	float dis = ((music_loop->i)%beat_interval)/(float)beat_interval-0.5f;
+	
+	
+
+	if (moving)
 	//move camera:
 	{
 
 		//combine inputs into a move:
-		// constexpr float PlayerSpeed = 30.0f;
+		constexpr float PlayerSpeed = 10.0f;
 		glm::vec2 move = glm::ivec2(0.0f);
-		move.x -= left.downs;
-		move.x += right.downs;
-		move.y += down.downs;
-		move.y -= up.downs;
 
-		//make it so that moving diagonally doesn't go faster:
-		// if (move != glm::vec2(0.0f)) move = glm::normalize(move) * PlayerSpeed * elapsed;
+		if (left.pressed) move.x = -1.0f;
+		if (right.pressed) move.x = 1.0f;
+		if (down.pressed) move.y = +1.0f;
+		if (up.pressed) move.y = -1.0f;
 
-		// glm::mat4x3 frame = camera->transform->make_local_to_parent();
-		// glm::vec3 right = frame[0];
-		// //glm::vec3 up = frame[1];
-		// glm::vec3 forward = -frame[2];
-		
-		// std::cout << music_loop->i << std::endl;
-		float dis = ((music_loop->i)%beat_interval)/(float)beat_interval-0.5f;
-		bar->position = bar_base_position + dis * dirx * 4.0f;
-		bar_ref->position = bar_base_position;
+		int new_dir;
+		if (left.pressed) new_dir = -1;
+		if (right.pressed) new_dir = 1;
+		if (down.pressed) new_dir = 2;
+		if (up.pressed) new_dir = 0;
 
-		if (hit > 0 && legal(player_pos+(glm::ivec2)move, energy)){
-			if (std::abs(dis) <= beat_range){
-				hittable = false;
-				energy ++;
-				if (energy > 3){
-					player->position.z = 2;
-				}
-			} 
-		// std::cout << player->position.x << " " << player->position.y << std::endl;
-			player_pos += (glm::ivec2)move;
-			player->position += move.x * dirx + move.y * diry;
-			bar_base_position += move.x * dirx + move.y * diry;
-			camera->transform->position += move.x * dirx + move.y * diry;
-			if (map[player_pos.y][player_pos.x] == 't'){
-				MazeMode::level ++;
-				return true;
-			}
+		if (legal(player_pos+(glm::ivec2)move, energy)){
+			dmov += PlayerSpeed*elapsed;
+			dmov = std::fmin(dmov, 1.0f);
+			player->position = player_base_position + dmov * (move.x * dirx + move.y * diry);
+			player->rotation = glm::angleAxis(
+						glm::radians(dmov*(new_dir-player_dir)*90),
+						dirz
+					) * player_base_rotation;
+			camera->transform->position = camera_base_position + dmov * (move.x * dirx + move.y * diry);
 			Sound::listener.set_position_right(camera->transform->position, dirx, 1.0f / 60.0f);
-		} else {
-			if (dis > beat_range && dis < 0.4){
-				if (hittable){
-					energy = 0;
-					if (map[player_pos.y][player_pos.x] == 'f')
-						player->position.z = 0;
-				}
-			} else if (dis > 0.4 && dis < 0.5){
-				hittable = true;
+			if (dmov == 1.0f){
+				dmov = 0;
+				player_pos += (glm::ivec2)move;
+				player_base_position = player->position;
+				player_base_rotation = player->rotation;
+				camera_base_position = camera->transform->position;
+				player_dir = new_dir;
+				moving = false;
+				end_move();
 			}
-		}
+			
+
+			// if (hit > 0){
+			// 	if (std::abs(dis) <= beat_range){
+			// 		miss = false;
+			// 		energy ++;
+			// 		if (energy > 3){
+			// 			player->position.z = 2;
+			// 		}
+			// 	} 
+			// // std::cout << player->position.x << " " << player->position.y << std::endl;
+				
+			// 	if (map[player_pos.y][player_pos.x] == 't'){
+			// 		MazeMode::level ++;
+			// 		return true;
+			// 	}
+				
+			// } else {
+			// 	if (dis > beat_range){
+			// 		if (miss){
+			// 			energy = 0;
+			// 			if (map[player_pos.y][player_pos.x] == 'f')
+			// 				player->position.z = 0;
+			// 		}
+			// 	} else if (dis < beat_range){
+			// 		miss = true;
+			// 	}
+			// }
 		// std::cout << hittable << " " << dis << std::endl;
 		
 				
-		
-		
+		} else {
+			end_move();
+		}
+	
 		// std::cout << camera->transform->position.x << " " << camera->transform->position.y << " " << camera->transform->position.z << " " << std::endl;
 	}
-
-
+	bar->scale = glm::vec3(0.25f, 0.05f, 0.05f);
+	bar_ref->position = camera->transform->position + bar_offset;
+	bar->position = bar_ref->position + dis * dirx * 4.0f;
 	//reset button press counters:
-	left.downs = 0;
-	right.downs = 0;
-	up.downs = 0;
-	down.downs = 0;
-	hit = -1;
-	bar->scale = glm::vec3(0.5f, 0.1f, 0.1f);
+	
 	return false;
 	// std::cout << music_loop->i << std::endl;
 	
@@ -304,20 +335,20 @@ void MazeMode::draw(glm::uvec2 const &drawable_size) {
 		));
 
 		constexpr float H = 0.09f;
-		lines.draw_text(std::string("Combo Count:")+std::to_string(energy)+"/4",
+		lines.draw_text(std::string("COMBO ")+std::to_string(energy)+"/4",
 			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
 		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text(std::string("Combo Count:")+std::to_string(energy)+"/4",
+		lines.draw_text(std::string("COMBO ")+std::to_string(energy)+"/4",
 			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + 0.1f * H - ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
-		lines.draw_text(std::string("Level: ")+std::to_string(MazeMode::level+1),
+		lines.draw_text(std::string("Level ")+std::to_string(MazeMode::level+1),
 			glm::vec3(-aspect + 0.1f * H, 0.9f-0.1f * H, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-		lines.draw_text(std::string("Level: ")+std::to_string(MazeMode::level+1),
+		lines.draw_text(std::string("Level ")+std::to_string(MazeMode::level+1),
 			glm::vec3(-aspect + 0.1f * H + ofs, 0.9f-0.1f * H - ofs, 0.0),
 			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
 			glm::u8vec4(0xff, 0xff, 0xff, 0x00));

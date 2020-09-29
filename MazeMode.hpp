@@ -16,7 +16,7 @@ struct MazeMode : Mode {
 	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
 	virtual bool update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
-	
+	void end_move();
 
 	//----- game state -----
 	bool legal(glm::ivec2 new_pos, uint energy);
@@ -46,11 +46,17 @@ struct MazeMode : Mode {
 	Scene::Transform *target = nullptr;
 	Scene::Transform *bar = nullptr;
 	Scene::Transform *bar_ref = nullptr;
-	glm::vec3 bar_base_position;
+	glm::vec3 bar_offset = glm::vec3(0.0f, -3.0f, -2.0f);
+	glm::quat player_base_rotation;
+	glm::vec3 player_base_position;
+	glm::vec3 camera_base_position;
+	float dmov = 0.0f;
 	static int level;
 	uint energy = 0;
 	int hit = -1;
-	bool hittable = true;
+	bool moving = false;
+	bool miss = false;
+	int player_dir = 0;
 
 	int next_byte_pos = 0;
 	int bpm[3] = {120, 125, 105};
@@ -60,7 +66,7 @@ struct MazeMode : Mode {
 
 	glm::vec3 dirx = glm::vec3(-2.0f, 0.0f, 0.0f);
 	glm::vec3 diry = glm::vec3(0.0f, 2.0f, 0.0f);
-	glm::vec3 dirz = glm::vec3(0.0f, 0.0f, 1.0f);
+	glm::vec3 dirz = glm::vec3(0.0f, 0.0f, -1.0f);
 
 	glm::ivec2 player_pos = glm::ivec2(0,0);
 };
