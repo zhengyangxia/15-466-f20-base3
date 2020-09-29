@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
 
 	//create window:
 	SDL_Window *window = SDL_CreateWindow(
-		"gp20 game3: require sound", //TODO: remember to set a title for your game!
+		"Find Your Cake", //TODO: remember to set a title for your game!
 		SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED,
 		480, 360, //TODO: modify window size if you'd like
 		SDL_WINDOW_OPENGL
