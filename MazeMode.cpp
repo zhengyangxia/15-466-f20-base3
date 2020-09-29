@@ -203,7 +203,7 @@ void MazeMode::end_move(){
 
 bool MazeMode::update(float elapsed) {
 
-	float dis = ((music_loop->i)%beat_interval)/(float)beat_interval-0.5f;
+	float dis = ((music_loop->i-beat_offset[level])%beat_interval)/(float)beat_interval-0.5f;
 
 	if (moving)
 	//move camera:
@@ -259,6 +259,9 @@ bool MazeMode::update(float elapsed) {
 						player_base_position.z = 2;
 					}
 				} 
+				if (std::abs(dis) > beat_range){
+					miss = true;
+				}
 				hit = -1;
 			}
 				

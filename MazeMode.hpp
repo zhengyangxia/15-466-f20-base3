@@ -58,6 +58,7 @@ struct MazeMode : Mode {
 	bool miss = false;
 	int player_dir = 0;
 	int bpm[3] = {120, 125, 105};
+	int beat_offset[3] = {40, 40, 56304};
 	int sample_per_sec = 48000;
 	int beat_interval;
 	float beat_range = 0.15f;
