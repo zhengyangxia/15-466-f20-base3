@@ -162,15 +162,19 @@ bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 		hit = music_loop->i;
 		bar->scale *= 1.1f;
 		if (evt.key.keysym.sym == SDLK_a) {
+			player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f) * glm::quat(0.7071f, 0.0f, 0.7071f, 0.0f) * glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f);
 			left.downs += 1;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_d) {
+			player->rotation = glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
 			right.downs += 1;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_w) {
+			player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f) * glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
 			up.downs += 1;
 			return true;
 		} else if (evt.key.keysym.sym == SDLK_s) {
+			player->rotation = glm::quat(0.7071f, 0.0f, 0.0f, -0.7071f) * glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
 			down.downs += 1;
 			return true;
 		}
