@@ -7,6 +7,7 @@
 #include "Load.hpp"
 #include "gl_errors.hpp"
 #include "data_path.hpp"
+#include "glm/fwd.hpp"
 #include "load_save_png.hpp"
 
 #include <glm/gtc/type_ptr.hpp>
@@ -49,9 +50,21 @@ Scene::Transform* MazeMode::add_mesh_to_drawable(std::string mesh_name, glm::vec
 	scene.transforms.emplace_back();
 	Scene::Transform* t = &scene.transforms.back();
 	t->position = position;
-	// if (mesh_name == "Wall") {
-	// 	t->scale.z = 2.0;
-	// }
+	if (mesh_name == "Building") {
+		t->position += glm::vec3(0, 0, 2);
+		add_mesh_to_drawable("Building1", position-glm::vec3(0, -1, 0));
+		add_mesh_to_drawable("Building2", position-glm::vec3(-1, 0, 0));
+		add_mesh_to_drawable("Building1", position-glm::vec3(0, -1, 0));
+		add_mesh_to_drawable("Building2", position-glm::vec3(1, 0, 0));
+	} else if (mesh_name == "Building2") {
+		t->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f);
+	} else if (mesh_name == "water opossum ") {
+		t->scale = glm::vec3(0.15, 0.15, 0.15);
+		t->rotation = glm::quat(0.7071f, 0.0f, 0.0f, 0.7071f) * glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
+	} else if (mesh_name == "cake") {
+		t->scale = glm::vec3(0.3, 0.3, 0.3);
+		t->rotation = glm::quat(0.7071f, 0.7071f, 0.0f, 0.0f);
+	}
 	t->name = mesh_name;
 	t->parent = nullptr;
 
@@ -89,36 +102,32 @@ void MazeMode::load_level(int level) {
 			if (c.r == 0 && c.g == 0 && c.b == 0) { 			// black -> wall
 				std::cout << "w ";
 				map[i][j] = 'w';
-				add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y, 0));
+				add_mesh_to_drawable("Building", glm::vec3(size.x*2-x, y, 0));
 			} 
 			else if (c.r == 255 && c.g == 0 && c.b == 0) {		// red -> target
 				std::cout << "t ";
 				map[i][j] = 't';
-				target = add_mesh_to_drawable("Target", glm::vec3(size.x*2-x, y, 0));
+				target = add_mesh_to_drawable("cake", glm::vec3(size.x*2-x, y, 0));
 			} 
 			else if (c.r == 0 && c.g == 0 && c.b == 255) {   	// blue -> player
 				std::cout << "p ";
 				map[i][j] = 'f';
 				player_pos = glm::ivec2(j, i);
-				player = add_mesh_to_drawable("Player", glm::vec3(size.x*2-x, y, 0));
+				player = add_mesh_to_drawable("water opossum ", glm::vec3(size.x*2-x, y, 0));
 				bar = add_mesh_to_drawable("Wall", glm::vec3(size.x*2-x, y+2, 4));
 				bar->scale = glm::vec3(1.0f, 0.1f, 0.1f);
 				bar_base_position = bar->position + dirx;
+				
 			} else {
 				std::cout << "  ";
 				map[i][j] = 'f';
 			}
 			
 			// floor
-			if ((i+j)%2 == 0)
-				add_mesh_to_drawable("Plane1", glm::vec3(size.x*2-x, y, -1));
-			else
-				add_mesh_to_drawable("Plane2", glm::vec3(size.x*2-x, y, -1));
+			add_mesh_to_drawable("Floor", glm::vec3(size.x*2-x, y, 0));
 		}
 		std::cout << std::endl;
 	}
-	
-	
 }
 
 
