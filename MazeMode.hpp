@@ -38,7 +38,6 @@ struct MazeMode : Mode {
 	// util
 	Scene::Transform* add_mesh_to_drawable(std::string mesh_name, glm::vec3 position);
 	void load_level(int level);
-	size_t get_next_byte_pos();
 	char **map = nullptr;
 	glm::ivec2 map_size;
 
@@ -51,11 +50,13 @@ struct MazeMode : Mode {
 	static int level;
 	uint energy = 0;
 	int hit = -1;
+	bool hittable = true;
 
 	int next_byte_pos = 0;
-	int bpm = 60;
+	int bpm[3] = {120, 125, 105};
 	int sample_per_sec = 48000;
-	int beat_interval = 60*sample_per_sec/bpm;
+	int beat_interval;
+	float beat_range = 0.2f;
 
 	glm::vec3 dirx = glm::vec3(-2.0f, 0.0f, 0.0f);
 	glm::vec3 diry = glm::vec3(0.0f, 2.0f, 0.0f);
