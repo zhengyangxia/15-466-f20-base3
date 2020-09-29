@@ -46,6 +46,7 @@ struct MazeMode : Mode {
 	Scene::Transform *player = nullptr;
 	Scene::Transform *target = nullptr;
 	Scene::Transform *bar = nullptr;
+	Scene::Transform *bar_ref = nullptr;
 	glm::vec3 bar_base_position;
 	static int level;
 	uint energy = 0;
