@@ -133,12 +133,9 @@ void MazeMode::load_level(int level) {
 	}
 	Sound::Sample const *maze_sample = new Sound::Sample(data_path(std::to_string(level)+".wav"));
 	music_loop = Sound::loop_3D(*maze_sample, 1.0f, target->position, 5.0f);
+	beat_interval = 60*sample_per_sec/bpm[level];
 }
 
-
-size_t MazeMode::get_next_byte_pos() {
-	return next_byte_pos + (size_t) (60.0 / bpm * sample_per_sec);
-}
 
 
 MazeMode::MazeMode() : scene(*maze_scene) {
@@ -222,20 +219,13 @@ bool MazeMode::update(float elapsed) {
 		bar_ref->position = bar_base_position;
 
 		if (hit > 0 && legal(player_pos+(glm::ivec2)move, energy)){
-			// bar->position = bar_base_position;
-			
-			std::cout << hit << " " << dis << std::endl;
-			if (dis <= 0.1){
+			if (std::abs(dis) <= beat_range){
+				hittable = false;
 				energy ++;
 				if (energy > 3){
 					player->position.z = 2;
 				}
-			} else {
-				if (map[player_pos.y][player_pos.x] == 'f'){
-					player->position.z = 0;
-				}
-				energy = 0;
-			}
+			} 
 		// std::cout << player->position.x << " " << player->position.y << std::endl;
 			player_pos += (glm::ivec2)move;
 			player->position += move.x * dirx + move.y * diry;
@@ -246,7 +236,20 @@ bool MazeMode::update(float elapsed) {
 				return true;
 			}
 			Sound::listener.set_position_right(camera->transform->position, dirx, 1.0f / 60.0f);
+		} else {
+			if (dis > beat_range && dis < 0.4){
+				if (hittable){
+					energy = 0;
+					if (map[player_pos.y][player_pos.x] == 'f')
+						player->position.z = 0;
+				}
+			} else if (dis > 0.4 && dis < 0.5){
+				hittable = true;
+			}
 		}
+		// std::cout << hittable << " " << dis << std::endl;
+		
+				
 		
 		
 		// std::cout << camera->transform->position.x << " " << camera->transform->position.y << " " << camera->transform->position.z << " " << std::endl;

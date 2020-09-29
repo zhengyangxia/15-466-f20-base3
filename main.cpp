@@ -105,7 +105,7 @@ int main(int argc, char **argv) {
 	// int cur_level = 0;
 	MazeMode::level = 0;
 	bool next_level = false;
-	int total_level = 2;
+	int total_level = 3;
 	Mode::set_current(std::make_shared< MazeMode >());
 	//------------ main loop ------------
 
