@@ -19,7 +19,7 @@ struct MazeMode : Mode {
 	void end_move();
 
 	//----- game state -----
-	bool legal(glm::ivec2 new_pos, uint energy);
+	bool legal(glm::ivec2 new_pos, int energy);
 
 	//input tracking:
 	struct Button {
@@ -52,7 +52,7 @@ struct MazeMode : Mode {
 	glm::vec3 camera_base_position;
 	float dmov = 0.0f;
 	static int level;
-	uint energy = 0;
+	int energy = 0;
 	int hit = -1;
 	bool moving = false;
 	bool miss = false;

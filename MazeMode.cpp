@@ -184,7 +184,7 @@ bool MazeMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 	return false;
 }
 
-bool MazeMode::legal(glm::ivec2 new_pos, uint energy){
+bool MazeMode::legal(glm::ivec2 new_pos, int energy){
 	if (new_pos.x < 0 || new_pos.y < 0 || new_pos.y >= map_size.y || new_pos.x >= map_size.x) return false;
 	if (map[new_pos.y][new_pos.x] == 'w' && energy <= 3){
 		return false;
@@ -211,7 +211,7 @@ bool MazeMode::update(float elapsed) {
 
 		//combine inputs into a move:
 		constexpr float PlayerSpeed = 10.0f;
-		glm::vec2 move = glm::ivec2(0.0f);
+		glm::vec2 move = glm::vec2(0.0f);
 
 		if (left.pressed) move.x = -1.0f;
 		if (right.pressed) move.x = 1.0f;
